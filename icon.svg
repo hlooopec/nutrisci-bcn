@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="115" fill="#0f172a"/>
+  <rect x="36" y="36" width="440" height="440" rx="90" fill="url(#g)"/>
+  <text x="256" y="290" font-family="Arial, sans-serif" font-size="145" font-weight="900" fill="#ffffff" text-anchor="middle">BCN</text>
+  <text x="256" y="395" font-family="Arial, sans-serif" font-size="60" font-weight="700" fill="#052e16" text-anchor="middle">KCAL AI</text>
+</svg>

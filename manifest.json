@@ -1,0 +1,18 @@
+{
+  "short_name": "NutriSci BCN",
+  "name": "NutriSci BCN v3.0 — Mobile AI & Camera",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

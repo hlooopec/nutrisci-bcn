@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="apple-touch-icon" href="icon.svg">
+    <title>NutriSci BCN v3.0 — Mobile AI & Camera</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-input: #0b1120;
+            --border: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #10b981;
+            --accent-hover: #059669;
+            --blue: #3b82f6;
+            --amber: #f59e0b;
+            --danger: #ef4444;
+            --purple: #8b5cf6;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-main); line-height: 1.45; padding-bottom: 90px; }
+        .app-shell { max-width: 600px; margin: 0 auto; padding: 14px; }
+
+        /* Top App Bar */
+        .app-header { display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 14px 16px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 14px; position: sticky; top: 8px; z-index: 50; box-shadow: 0 8px 20px rgba(0,0,0,0.35); }
+        .brand { display: flex; align-items: center; gap: 10px; }
+        .brand-badge { background: linear-gradient(135deg, #10b981, #3b82f6); color: #fff; font-weight: 800; padding: 6px 10px; border-radius: 10px; font-size: 0.95rem; }
+        .brand h1 { font-size: 1.05rem; font-weight: 700; }
+        .brand p { font-size: 0.72rem; color: var(--text-muted); }
+
+        /* Views / Tabs */
+        .tab-view { display: none; }
+        .tab-view.active { display: block; animation: fadeIn 0.18s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Cards & Forms */
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+        .card-title { font-size: 0.98rem; font-weight: 700; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .form-group { margin-bottom: 10px; }
+        label { display: block; font-size: 0.76rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 500; }
+        input, select, textarea { background: var(--bg-input); border: 1px solid var(--border); color: var(--text-main); padding: 10px 12px; border-radius: 10px; font-size: 0.92rem; width: 100%; outline: none; }
+        input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+
+        /* Buttons */
+        button { cursor: pointer; border: none; border-radius: 10px; padding: 11px 14px; font-size: 0.88rem; font-weight: 600; transition: all 0.15s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn-primary { background: var(--accent); color: #052e16; }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-blue { background: var(--blue); color: #fff; }
+        .btn-purple { background: linear-gradient(135deg, #8b5cf6, #6366f1); color: #fff; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
+        .btn-danger { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .btn-sm { padding: 6px 10px; font-size: 0.76rem; border-radius: 8px; }
+        .btn-block { width: 100%; }
+
+        /* KPI Summary */
+        .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+        .kpi-box { background: var(--bg-input); border: 1px solid var(--border); padding: 12px; border-radius: 12px; text-align: center; }
+        .kpi-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+        .kpi-val { font-size: 1.35rem; font-weight: 800; margin-top: 2px; }
+        .kpi-sub { font-size: 0.7rem; color: var(--text-muted); }
+
+        /* Macro Bars */
+        .macro-bars { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+        .macro-card { background: var(--bg-input); border: 1px solid var(--border); padding: 10px 12px; border-radius: 12px; }
+        .macro-header { display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 600; margin-bottom: 6px; }
+        .progress-track { background: #1e293b; height: 8px; border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; transition: width 0.25s; }
+
+        /* Camera Box */
+        .camera-trigger-box { border: 2px dashed var(--accent); background: rgba(16, 185, 129, 0.06); border-radius: 16px; padding: 20px; text-align: center; margin-bottom: 14px; }
+        .camera-preview { width: 100%; max-height: 260px; object-fit: cover; border-radius: 12px; margin-top: 12px; display: none; border: 1px solid var(--border); }
+
+        /* Meals */
+        .meal-box { background: var(--bg-input); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+        .meal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 8px; font-weight: 700; font-size: 0.9rem; }
+        .meal-kcal { color: var(--accent); font-size: 0.84rem; }
+        .meal-list { list-style: none; font-size: 0.82rem; }
+        .meal-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px dashed #1e293b; gap: 8px; }
+        .meal-row:last-child { border-bottom: none; }
+
+        /* Chips & Catalog */
+        .store-chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 10px; scrollbar-width: none; }
+        .store-chips::-webkit-scrollbar { display: none; }
+        .chip { white-space: nowrap; padding: 6px 12px; border-radius: 20px; font-size: 0.76rem; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-muted); }
+        .chip.active { background: var(--accent); color: #052e16; border-color: var(--accent); }
+        .catalog-list { max-height: 360px; overflow-y: auto; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-input); }
+        .catalog-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid #1e293b; gap: 8px; }
+        .store-tag { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
+        .tag-mercadona { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .tag-lidl { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .tag-dia { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        .tag-bonpreu { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+        .tag-base { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
+
+        /* Bottom Navigation (Android Native Feel) */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(15, 23, 42, 0.96); backdrop-filter: blur(12px); border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(4, 1fr); padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); z-index: 100; max-width: 600px; margin: 0 auto; }
+        .nav-item { background: transparent; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 4px; font-size: 0.7rem; font-weight: 600; border-radius: 10px; }
+        .nav-item .icon { font-size: 1.25rem; }
+        .nav-item.active { color: var(--accent); background: rgba(16, 185, 129, 0.1); }
+        .verify-note { font-size: 0.72rem; background: rgba(245, 158, 11, 0.12); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.3); padding: 8px 10px; border-radius: 8px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+<div class="app-shell">
+    <header class="app-header">
+        <div class="brand">
+            <div class="brand-badge">BCN 3.0</div>
+            <div>
+                <h1>NutriSci Mobile AI</h1>
+                <p>Redmi Note 14 Pro • Камера + База Барселоны</p>
+            </div>
+        </div>
+        <button class="btn-outline btn-sm" onclick="addWater(1)" id="waterQuickBtn">💧 0/10</button>
+    </header>
+
+    <!-- ВКЛАДКА 1: ДНЕВНИК И ДАШБОРД -->
+    <div id="tab-diary" class="tab-view active">
+        <div class="kpi-grid">
+            <div class="kpi-box" style="border-color: var(--accent);">
+                <div class="kpi-label">Цель на день</div>
+                <div class="kpi-val" id="targetKcalVal" style="color:var(--accent);">0</div>
+                <div class="kpi-sub" id="deficitKcalSub">дефицит 0 ккал</div>
+            </div>
+            <div class="kpi-box">
+                <div class="kpi-label">Осталось сегодня</div>
+                <div class="kpi-val" id="remKcalVal">0</div>
+                <div class="kpi-sub" id="weeklyLossSub">прогноз -0.0 кг/нед</div>
+            </div>
+        </div>
+
+        <div class="macro-bars">
+            <div class="macro-card">
+                <div class="macro-header"><span>🔥 Ккал</span><span id="barKcalText">0 / 0</span></div>
+                <div class="progress-track"><div id="barKcalFill" class="progress-fill" style="background:var(--accent); width:0%"></div></div>
+            </div>
+            <div class="macro-card">
+                <div class="macro-header"><span>🥩 Белки</span><span id="barProtText">0 / 0 г</span></div>
+                <div class="progress-track"><div id="barProtFill" class="progress-fill" style="background:var(--blue); width:0%"></div></div>
+            </div>
+            <div class="macro-card">
+                <div class="macro-header"><span>🥑 Жиры</span><span id="barFatText">0 / 0 г</span></div>
+                <div class="progress-track"><div id="barFatFill" class="progress-fill" style="background:var(--amber); width:0%"></div></div>
+            </div>
+            <div class="macro-card">
+                <div class="macro-header"><span>🍚 Углеводы</span><span id="barCarbText">0 / 0 г</span></div>
+                <div class="progress-track"><div id="barCarbFill" class="progress-fill" style="background:var(--purple); width:0%"></div></div>
+            </div>
+        </div>
+
+        <!-- Быстрая кнопка вызова камеры с главного экрана -->
+        <button class="btn-purple btn-block" style="margin-bottom:14px; padding:13px;" onclick="switchTab('camera')">
+            📷 Сфотографировать еду (Обед / Ужин)
+        </button>
+
+        <div class="meal-box">
+            <div class="meal-header"><span>☀️ Завтрак (Desayuno)</span><span class="meal-kcal" id="mealKcal_breakfast">0 ккал</span></div>
+            <ul class="meal-list" id="mealList_breakfast"></ul>
+        </div>
+        <div class="meal-box">
+            <div class="meal-header"><span>🍲 Обед (Comida)</span><span class="meal-kcal" id="mealKcal_lunch">0 ккал</span></div>
+            <ul class="meal-list" id="mealList_lunch"></ul>
+        </div>
+        <div class="meal-box">
+            <div class="meal-header"><span>🌙 Ужин (Cena)</span><span class="meal-kcal" id="mealKcal_dinner">0 ккал</span></div>
+            <ul class="meal-list" id="mealList_dinner"></ul>
+        </div>
+        <div class="meal-box">
+            <div class="meal-header"><span>🍏 Перекус (Merienda)</span><span class="meal-kcal" id="mealKcal_snack">0 ккал</span></div>
+            <ul class="meal-list" id="mealList_snack"></ul>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-top:10px;">
+            <button class="btn-outline btn-sm" style="flex:1;" onclick="exportData()">💾 Экспорт JSON</button>
+            <button class="btn-danger btn-sm" style="flex:1;" onclick="clearDiary()">🗑 Очистить день</button>
+        </div>
+    </div>
+
+    <!-- ВКЛАДКА 2: КАМЕРА ANDROID И AI-РАСПОЗНАВАНИЕ -->
+    <div id="tab-camera" class="tab-view">
+        <div class="card">
+            <div class="card-title">📷 Камера Android — Анализ еды по фото</div>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">
+                Нажми кнопку ниже, чтобы сразу открыть камеру на твоем <strong>Redmi Note 14 Pro 5G</strong> или выбрать фото из галереи.
+            </p>
+
+            <div class="form-group">
+                <label>Куда записать блюдо?</label>
+                <select id="cameraMealTarget">
+                    <option value="breakfast">☀️ Завтрак (Desayuno)</option>
+                    <option value="lunch" selected>🍲 Обед (Comida)</option>
+                    <option value="dinner">🌙 Ужин (Cena)</option>
+                    <option value="snack">🍏 Перекус (Merienda)</option>
+                </select>
+            </div>
+
+            <!-- Скрытый нативный инпут вызова камеры Android -->
+            <input type="file" id="androidCameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleCameraPhoto(event)">
+            <input type="file" id="androidGalleryInput" accept="image/*" style="display:none;" onchange="handleCameraPhoto(event)">
+
+            <div class="camera-trigger-box">
+                <div style="display:flex; gap:8px; flex-direction:column;">
+                    <button class="btn-primary btn-block" onclick="document.getElementById('androidCameraInput').click()">
+                        📸 Открыть камеру и снять еду
+                    </button>
+                    <button class="btn-outline btn-block" onclick="document.getElementById('androidGalleryInput').click()">
+                        🖼 Выбрать готовое фото из галереи
+                    </button>
+                </div>
+                <img id="cameraPreviewImg" class="camera-preview" alt="Предпросмотр фото">
+            </div>
+
+            <div class="form-group">
+                <label>Комментарий к фото (опционально, например: «примерно 250 г, без масла»)</label>
+                <input type="text" id="photoUserNote" placeholder="Напр.: Обед, жарил на 1 ч.л. оливкового масла">
+            </div>
+
+            <button class="btn-purple btn-block" id="analyzeBtn" onclick="analyzePhotoWithGemini()" style="margin-bottom:12px;">
+                🤖 Распознать КБЖУ по фото (Автоввод в дневник)
+            </button>
+
+            <div id="aiStatusBox" style="display:none; background:var(--bg-input); border:1px solid var(--border); padding:12px; border-radius:10px; font-size:0.82rem; margin-bottom:12px;"></div>
+
+            <div class="card-title" style="margin-top:16px;">🔑 Настройка автономного AI (Gemini API Key)</div>
+            <p style="font-size:0.76rem; color:var(--text-muted); margin-bottom:8px;">
+                Чтобы приложение само распознавало фотографии напрямую с телефона без захода в чат, вставь бесплатный ключ из <code>aistudio.google.com</code> (сохраняется только в памяти твоего телефона):
+            </p>
+            <div class="form-row" style="grid-template-columns: 1fr auto;">
+                <input type="password" id="geminiApiKey" placeholder="AIzaSy..." oninput="saveApiKey()">
+                <button class="btn-outline btn-sm" onclick="toggleKeyVis()">👁</button>
+            </div>
+
+            <div class="card-title" style="margin-top:16px;">📋 Или вставь готовый код из нашего чата</div>
+            <div class="form-row" style="grid-template-columns: 1fr auto;">
+                <input type="text" id="chatJsonInput" placeholder='[{"meal":"lunch","name":"..."}]'>
+                <button class="btn-blue btn-sm" onclick="importFromChatJson()">Вставить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ВКЛАДКА 3: БАЗА СУПЕРМАРКЕТОВ БАРСЕЛОНЫ -->
+    <div id="tab-catalog" class="tab-view">
+        <div class="card">
+            <div class="card-title">
+                <span>🛒 Хиты Mercadona, Lidl, Dia, Bonpreu</span>
+            </div>
+            <div class="verify-note">
+                ℹ️ [Неподтверждённое] Справочные значения БЖУ указаны по средним данным упаковок сетей в Барселоне.
+            </div>
+            <div class="form-row">
+                <div>
+                    <label>Приём пищи</label>
+                    <select id="targetMealSelect">
+                        <option value="breakfast">☀️ Завтрак</option>
+                        <option value="lunch" selected>🍲 Обед</option>
+                        <option value="dinner">🌙 Ужин</option>
+                        <option value="snack">🍏 Перекус</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Поиск продукта</label>
+                    <input type="text" id="foodSearch" placeholder="Queso, Pollo, Skyr..." oninput="renderCatalog()">
+                </div>
+            </div>
+
+            <div class="store-chips" id="storeFilterChips">
+                <span class="chip active" onclick="setStoreFilter('ALL', this)">Все</span>
+                <span class="chip" onclick="setStoreFilter('Mercadona', this)">🟢 Mercadona</span>
+                <span class="chip" onclick="setStoreFilter('Lidl', this)">🔵 Lidl</span>
+                <span class="chip" onclick="setStoreFilter('Dia', this)">🔴 Dia</span>
+                <span class="chip" onclick="setStoreFilter('Bonpreu', this)">🟡 Bonpreu</span>
+                <span class="chip" onclick="setStoreFilter('Base', this)">⚪ Базовые</span>
+            </div>
+
+            <div class="catalog-list" id="catalogContainer"></div>
+        </div>
+    </div>
+
+    <!-- ВКЛАДКА 4: ПАРАМЕТРЫ ТЕЛА И ЦЕЛИ -->
+    <div id="tab-settings" class="tab-view">
+        <div class="card">
+            <div class="card-title">⚙️ Параметры тела и дефицит</div>
+            <div class="form-row">
+                <div>
+                    <label>Пол</label>
+                    <select id="gender" onchange="recalc()">
+                        <option value="male">Мужской</option>
+                        <option value="female">Женский</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Возраст (лет)</label>
+                    <input type="number" id="age" value="38" oninput="recalc()">
+                </div>
+            </div>
+            <div class="form-row">
+                <div>
+                    <label>Рост (см)</label>
+                    <input type="number" id="height" value="178" oninput="recalc()">
+                </div>
+                <div>
+                    <label>Текущий вес (кг)</label>
+                    <input type="number" id="weight" value="86" step="0.1" oninput="recalc()">
+                </div>
+            </div>
+            <div class="form-row">
+                <div>
+                    <label>Желаемый вес (кг)</label>
+                    <input type="number" id="targetWeight" value="76" step="0.1" oninput="recalc()">
+                </div>
+                <div>
+                    <label>Дефицит (%): <strong id="deficitLabel">18%</strong></label>
+                    <input type="range" id="deficitPct" min="5" max="30" value="18" oninput="recalc()">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Активность</label>
+                <select id="activity" onchange="recalc()">
+                    <option value="1.2">1.20 — Сидячий</option>
+                    <option value="1.375" selected>1.375 — Легкая активность</option>
+                    <option value="1.55">1.55 — Средняя (активная работа / спорт)</option>
+                    <option value="1.725">1.725 — Высокая</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <div>
+                    <label>Белки (г/кг веса)</label>
+                    <input type="number" id="protPerKg" value="1.8" step="0.1" oninput="recalc()">
+                </div>
+                <div>
+                    <label>Жиры (г/кг веса)</label>
+                    <input type="number" id="fatPerKg" value="0.9" step="0.1" oninput="recalc()">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Нижнее меню навигации как в нативном Android-приложении -->
+<nav class="bottom-nav">
+    <button class="nav-item active" id="nav-diary" onclick="switchTab('diary')">
+        <span class="icon">📊</span>
+        <span>Дневник</span>
+    </button>
+    <button class="nav-item" id="nav-camera" onclick="switchTab('camera')">
+        <span class="icon">📷</span>
+        <span>Камера AI</span>
+    </button>
+    <button class="nav-item" id="nav-catalog" onclick="switchTab('catalog')">
+        <span class="icon">🛒</span>
+        <span>Магазины</span>
+    </button>
+    <button class="nav-item" id="nav-settings" onclick="switchTab('settings')">
+        <span class="icon">⚙️</span>
+        <span>Параметры</span>
+    </button>
+</nav>
+
+<script>
+const DEFAULT_BARCELONA_FOODS = [
+    { id: 'm1', store: 'Mercadona', name: 'Queso Fresco Batido 0% (Hacendado)', kcal: 46, p: 8.0, f: 0.1, c: 3.5, defaultG: 200 },
+    { id: 'm2', store: 'Mercadona', name: 'Claras de huevo líquidas (Hacendado)', kcal: 50, p: 11.0, f: 0.2, c: 0.7, defaultG: 150 },
+    { id: 'm3', store: 'Mercadona', name: 'Pechuga de Pavo 92% (Hacendado)', kcal: 89, p: 19.0, f: 1.0, c: 1.0, defaultG: 100 },
+    { id: 'm4', store: 'Mercadona', name: 'Atún claro al natural (Hacendado)', kcal: 99, p: 23.0, f: 0.8, c: 0.0, defaultG: 120 },
+    { id: 'm5', store: 'Mercadona', name: 'Natillas +Proteínas (Hacendado, 120г)', kcal: 82, p: 10.0, f: 1.5, c: 6.8, defaultG: 120 },
+    { id: 'm6', store: 'Mercadona', name: 'Yogur +Proteínas 0% (Hacendado)', kcal: 52, p: 10.0, f: 0.1, c: 3.0, defaultG: 125 },
+    { id: 'm7', store: 'Mercadona', name: 'Pan 100% Integral (Hacendado)', kcal: 245, p: 11.0, f: 3.2, c: 39.0, defaultG: 60 },
+    { id: 'm8', store: 'Mercadona', name: 'Guacamole 95% авокадо (Hacendado)', kcal: 158, p: 1.6, f: 14.3, c: 3.8, defaultG: 50 },
+    { id: 'm11', store: 'Mercadona', name: 'Gazpacho Tradicional (Hacendado)', kcal: 46, p: 0.8, f: 2.6, c: 4.3, defaultG: 250 },
+    { id: 'l1', store: 'Lidl', name: 'Skyr Natural 0% (Milbona)', kcal: 63, p: 11.0, f: 0.2, c: 4.0, defaultG: 150 },
+    { id: 'l2', store: 'Lidl', name: 'Queso Cottage Light (Milbona)', kcal: 82, p: 12.5, f: 2.2, c: 2.8, defaultG: 200 },
+    { id: 'l3', store: 'Lidl', name: 'High Protein Pudding (Milbona, 200г)', kcal: 76, p: 10.0, f: 1.5, c: 5.5, defaultG: 200 },
+    { id: 'l4', store: 'Lidl', name: 'Mozzarella Light (Milbona)', kcal: 157, p: 19.0, f: 8.5, c: 1.0, defaultG: 125 },
+    { id: 'd1', store: 'Dia', name: 'Pechuga de Pollo al natural (Dia)', kcal: 98, p: 22.0, f: 1.0, c: 0.2, defaultG: 110 },
+    { id: 'd2', store: 'Dia', name: 'Queso Fresco de Burgos 0% (Dia)', kcal: 66, p: 12.0, f: 0.2, c: 4.0, defaultG: 125 },
+    { id: 'b1', store: 'Bonpreu', name: 'Mató (Свежий каталонский сыр)', kcal: 98, p: 11.5, f: 4.5, c: 3.0, defaultG: 150 },
+    { id: 'b3', store: 'Bonpreu', name: 'Escalivada (Запеченные овощи)', kcal: 55, p: 1.2, f: 2.5, c: 6.5, defaultG: 200 },
+    { id: 'b4', store: 'Bonpreu', name: 'Jamón Serrano Reserva', kcal: 241, p: 31.0, f: 13.0, c: 0.5, defaultG: 50 },
+    { id: 's1', store: 'Base', name: 'Pechuga de Pollo (Куриное филе)', kcal: 110, p: 23.0, f: 1.2, c: 0.0, defaultG: 200 },
+    { id: 's2', store: 'Base', name: 'Huevos L (Яйца куриные)', kcal: 155, p: 12.6, f: 11.0, c: 0.7, defaultG: 120 },
+    { id: 's3', store: 'Base', name: 'Dorada / Lubina (Дорада / Сибас)', kcal: 96, p: 19.5, f: 1.8, c: 0.0, defaultG: 200 },
+    { id: 's5', store: 'Base', name: 'Arroz Basmati отварной', kcal: 130, p: 2.7, f: 0.3, c: 28.0, defaultG: 150 },
+    { id: 's6', store: 'Base', name: 'Patata cocida / al horno (Картофель)', kcal: 86, p: 1.8, f: 0.1, c: 20.0, defaultG: 200 }
+];
+
+// Предзагруженный сегодняшний завтрак пользователя (по средним параметрам)
+const INITIAL_TODAY_DIARY = {
+    breakfast: [
+        { uid: 101, name: 'Кофе с молоком (средний, без сахара)', store: 'Среднее', grams: 250, kcal: 48, p: 3.3, f: 1.5, c: 5.0 },
+        { uid: 102, name: 'Шоколадный тортик (средняя оценка)', store: 'Среднее', grams: 100, kcal: 390, p: 5.5, f: 18.0, c: 51.0 }
+    ],
+    lunch: [],
+    dinner: [],
+    snack: []
+};
+
+let state = {
+    foods: [...DEFAULT_BARCELONA_FOODS],
+    diary: JSON.parse(JSON.stringify(INITIAL_TODAY_DIARY)),
+    water: 0,
+    storeFilter: 'ALL',
+    targets: { bmr: 0, tdee: 0, kcal: 0, p: 0, f: 0, c: 0 },
+    currentPhotoBase64: null,
+    currentPhotoMime: 'image/jpeg'
+};
+
+function init() {
+    const saved = localStorage.getItem('nutrisci_bcn_v3');
+    if (saved) {
+        try {
+            const parsed = JSON.parse(saved);
+            if (parsed.foods && parsed.foods.length) state.foods = parsed.foods;
+            if (parsed.diary) state.diary = parsed.diary;
+            if (typeof parsed.water === 'number') state.water = parsed.water;
+        } catch(e) {}
+    }
+    const savedKey = localStorage.getItem('nutrisci_gemini_key') || '';
+    document.getElementById('geminiApiKey').value = savedKey;
+
+    recalc();
+    renderCatalog();
+    renderDiary();
+    updateWaterUI();
+}
+
+function saveState() {
+    localStorage.setItem('nutrisci_bcn_v3', JSON.stringify({
+        foods: state.foods,
+        diary: state.diary,
+        water: state.water
+    }));
+}
+
+function saveApiKey() {
+    localStorage.setItem('nutrisci_gemini_key', document.getElementById('geminiApiKey').value.trim());
+}
+
+function toggleKeyVis() {
+    const el = document.getElementById('geminiApiKey');
+    el.type = (el.type === 'password') ? 'text' : 'password';
+}
+
+function switchTab(tabName) {
+    document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + tabName).classList.add('active');
+    document.getElementById('nav-' + tabName).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function recalc() {
+    const gender = document.getElementById('gender').value;
+    const age = parseFloat(document.getElementById('age').value) || 38;
+    const height = parseFloat(document.getElementById('height').value) || 178;
+    const weight = parseFloat(document.getElementById('weight').value) || 86;
+    const activity = parseFloat(document.getElementById('activity').value) || 1.375;
+    const deficitPct = parseFloat(document.getElementById('deficitPct').value) || 18;
+    const pKg = parseFloat(document.getElementById('protPerKg').value) || 1.8;
+    const fKg = parseFloat(document.getElementById('fatPerKg').value) || 0.9;
+
+    document.getElementById('deficitLabel').textContent = deficitPct + '%';
+
+    const bmr = (gender === 'male')
+        ? (10 * weight) + (6.25 * height) - (5 * age) + 5
+        : (10 * weight) + (6.25 * height) - (5 * age) - 161;
+
+    const tdee = bmr * activity;
+    const targetKcal = Math.round(tdee * (1 - deficitPct / 100));
+    const deficitKcal = Math.round(tdee - targetKcal);
+
+    const p = Math.round(weight * pKg);
+    const f = Math.round(weight * fKg);
+    const c = Math.max(0, Math.round((targetKcal - (p * 4 + f * 9)) / 4));
+
+    state.targets = { bmr: Math.round(bmr), tdee: Math.round(tdee), kcal: targetKcal, p, f, c };
+
+    document.getElementById('targetKcalVal').textContent = targetKcal;
+    document.getElementById('deficitKcalSub').textContent = `дефицит ${deficitKcal} ккал`;
+    const weeklyLoss = (deficitKcal * 7) / 7700;
+    document.getElementById('weeklyLossSub').textContent = `темп -${weeklyLoss.toFixed(2)} кг/нед`;
+
+    updateProgressBars();
+}
+
+function handleCameraPhoto(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    state.currentPhotoMime = file.type || 'image/jpeg';
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const dataUrl = e.target.result;
+        state.currentPhotoBase64 = dataUrl.split(',')[1];
+        const img = document.getElementById('cameraPreviewImg');
+        img.src = dataUrl;
+        img.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+}
+
+async function analyzePhotoWithGemini() {
+    const statusBox = document.getElementById('aiStatusBox');
+    const apiKey = document.getElementById('geminiApiKey').value.trim();
+    const meal = document.getElementById('cameraMealTarget').value;
+    const note = document.getElementById('photoUserNote').value.trim();
+
+    if (!state.currentPhotoBase64) {
+        alert('Сначала сфотографируй еду или выбери снимок из галереи!');
+        return;
+    }
+
+    if (!apiKey) {
+        statusBox.style.display = 'block';
+        statusBox.innerHTML = '⚠️ <strong>Ключ Gemini API не введён.</strong> Чтобы распознавать фото прямо внутри телефона автономно, вставь бесплатный ключ Gemini API ниже, ИЛИ просто отправь это фото в наш чат — и я сразу пришлю тебе готовый расчёт!';
+        return;
+    }
+
+    statusBox.style.display = 'block';
+    statusBox.innerHTML = '⏳ <strong>Анализирую фотографию еды...</strong> Определяю продукты, вес порции и КБЖУ по средним параметрам...';
+
+    const prompt = `Ты эксперт-диетолог в Барселоне. Проанализируй фото еды. Комментарий пользователя: "${note || 'нет'}". Оцени состав и вес по средним параметрам. Верни ТОЛЬКО чистый JSON-массив без markdown-обертки в формате: [{"name":"Название блюда на русском","grams":250,"kcal":350,"p":25.0,"f":12.0,"c":30.0}]`;
+
+    try {
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [
+                        { text: prompt },
+                        { inline_data: { mime_type: state.currentPhotoMime, data: state.currentPhotoBase64 } }
+                    ]
+                }]
+            })
+        });
+        const data = await resp.json();
+        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const cleaned = rawText.replace(/```json|```/g, '').trim();
+        const items = JSON.parse(cleaned);
+
+        items.forEach(it => {
+            state.diary[meal].push({
+                uid: Date.now() + Math.random(),
+                name: it.name + ' (по фото)',
+                store: 'AI Фото',
+                grams: Math.round(it.grams || 200),
+                kcal: Math.round(it.kcal || 200),
+                p: +(it.p || 0).toFixed(1),
+                f: +(it.f || 0).toFixed(1),
+                c: +(it.c || 0).toFixed(1)
+            });
+        });
+
+        saveState();
+        renderDiary();
+        statusBox.innerHTML = '✅ <strong>Готово!</strong> Блюдо распознано и добавлено в твой рацион. Переключаю на дневник...';
+        setTimeout(() => switchTab('diary'), 1200);
+    } catch (err) {
+        statusBox.innerHTML = '❌ Ошибка при анализе через API. Проверь правильность ключа Gemini API или отправь фото в наш чат.';
+    }
+}
+
+function renderDiary() {
+    ['breakfast', 'lunch', 'dinner', 'snack'].forEach(meal => {
+        const listEl = document.getElementById('mealList_' + meal);
+        const kcalEl = document.getElementById('mealKcal_' + meal);
+        listEl.innerHTML = '';
+        let mealKcal = 0;
+
+        state.diary[meal].forEach(item => {
+            mealKcal += item.kcal;
+            const li = document.createElement('li');
+            li.className = 'meal-row';
+            li.innerHTML = `
+                <div>
+                    <strong>${item.name}</strong> <span style="color:var(--text-muted);">(${item.grams} г)</span>
+                    <div style="font-size:0.74rem; color:var(--text-muted);">
+                        ${item.kcal} ккал • Б: ${item.p}г | Ж: ${item.f}г | У: ${item.c}г
+                    </div>
+                </div>
+                <button class="btn-danger btn-sm" onclick="removeDiaryItem('${meal}', ${item.uid})">✕</button>
+            `;
+            listEl.appendChild(li);
+        });
+
+        if (state.diary[meal].length === 0) {
+            listEl.innerHTML = '<li style="color:var(--text-muted); font-size:0.76rem; padding:4px 0;">Пока пусто</li>';
+        }
+        kcalEl.textContent = mealKcal + ' ккал';
+    });
+    updateProgressBars();
+}
+
+function removeDiaryItem(meal, uid) {
+    state.diary[meal] = state.diary[meal].filter(i => i.uid !== uid);
+    saveState();
+    renderDiary();
+}
+
+function updateProgressBars() {
+    let totKcal = 0, totP = 0, totF = 0, totC = 0;
+    Object.values(state.diary).forEach(arr => {
+        arr.forEach(i => { totKcal += i.kcal; totP += i.p; totF += i.f; totC += i.c; });
+    });
+    const t = state.targets;
+    const rem = Math.max(0, t.kcal - Math.round(totKcal));
+    document.getElementById('remKcalVal').textContent = rem;
+
+    document.getElementById('barKcalText').textContent = `${Math.round(totKcal)} / ${t.kcal}`;
+    document.getElementById('barProtText').textContent = `${totP.toFixed(0)} / ${t.p} г`;
+    document.getElementById('barFatText').textContent = `${totF.toFixed(0)} / ${t.f} г`;
+    document.getElementById('barCarbText').textContent = `${totC.toFixed(0)} / ${t.c} г`;
+
+    document.getElementById('barKcalFill').style.width = Math.min(100, (totKcal / (t.kcal || 1)) * 100) + '%';
+    document.getElementById('barProtFill').style.width = Math.min(100, (totP / (t.p || 1)) * 100) + '%';
+    document.getElementById('barFatFill').style.width = Math.min(100, (totF / (t.f || 1)) * 100) + '%';
+    document.getElementById('barCarbFill').style.width = Math.min(100, (totC / (t.c || 1)) * 100) + '%';
+}
+
+function setStoreFilter(store, chipEl) {
+    state.storeFilter = store;
+    document.querySelectorAll('#storeFilterChips .chip').forEach(c => c.classList.remove('active'));
+    if (chipEl) chipEl.classList.add('active');
+    renderCatalog();
+}
+
+function getStoreBadgeClass(store) {
+    const s = (store || '').toLowerCase();
+    if (s.includes('mercadona')) return 'tag-mercadona';
+    if (s.includes('lidl')) return 'tag-lidl';
+    if (s.includes('dia')) return 'tag-dia';
+    if (s.includes('bonpreu')) return 'tag-bonpreu';
+    return 'tag-base';
+}
+
+function renderCatalog() {
+    const q = (document.getElementById('foodSearch').value || '').toLowerCase().trim();
+    const container = document.getElementById('catalogContainer');
+    container.innerHTML = '';
+
+    const filtered = state.foods.filter(item => {
+        const matchStore = (state.storeFilter === 'ALL') || (item.store === state.storeFilter);
+        const matchQuery = !q || item.name.toLowerCase().includes(q);
+        return matchStore && matchQuery;
+    });
+
+    filtered.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'catalog-item';
+        row.innerHTML = `
+            <div style="flex:1;">
+                <div style="font-size:0.84rem; font-weight:600;">
+                    <span class="store-tag ${getStoreBadgeClass(item.store)}">${item.store}</span> ${item.name}
+                </div>
+                <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">
+                    100г: <strong>${item.kcal} ккал</strong> | Б:${item.p} Ж:${item.f} У:${item.c}
+                </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:5px;">
+                <input type="number" id="gram_${item.id}" value="${item.defaultG || 100}" style="width:62px; padding:6px; text-align:center;">
+                <button class="btn-primary btn-sm" onclick="addFoodToMeal('${item.id}')">+</button>
+            </div>
+        `;
+        container.appendChild(row);
+    });
+}
+
+function addFoodToMeal(foodId) {
+    const food = state.foods.find(f => f.id === foodId);
+    if (!food) return;
+    const grams = parseFloat(document.getElementById('gram_' + foodId).value) || 100;
+    const meal = document.getElementById('targetMealSelect').value;
+    const r = grams / 100;
+
+    state.diary[meal].push({
+        uid: Date.now() + Math.random(),
+        name: food.name,
+        store: food.store,
+        grams: Math.round(grams),
+        kcal: Math.round(food.kcal * r),
+        p: +(food.p * r).toFixed(1),
+        f: +(food.f * r).toFixed(1),
+        c: +(food.c * r).toFixed(1)
+    });
+    saveState();
+    renderDiary();
+    switchTab('diary');
+}
+
+function importFromChatJson() {
+    const raw = document.getElementById('chatJsonInput').value.trim();
+    if (!raw) return;
+    try {
+        const data = JSON.parse(raw);
+        const items = Array.isArray(data) ? data : [data];
+        items.forEach(item => {
+            const meal = ['breakfast','lunch','dinner','snack'].includes(item.meal) ? item.meal : 'lunch';
+            const grams = parseFloat(item.grams) || 100;
+            const r = grams / 100;
+            state.diary[meal].push({
+                uid: Date.now() + Math.random(),
+                name: item.name || 'Блюдо',
+                store: item.store || 'Чат',
+                grams: Math.round(grams),
+                kcal: Math.round((item.kcal100 || 0) * r),
+                p: +((item.p100 || 0) * r).toFixed(1),
+                f: +((item.f100 || 0) * r).toFixed(1),
+                c: +((item.c100 || 0) * r).toFixed(1)
+            });
+        });
+        document.getElementById('chatJsonInput').value = '';
+        saveState();
+        renderDiary();
+        switchTab('diary');
+    } catch(e) {
+        alert('Неверный код JSON');
+    }
+}
+
+function addWater(delta) {
+    state.water = Math.max(0, state.water + delta);
+    saveState();
+    updateWaterUI();
+}
+
+function updateWaterUI() {
+    document.getElementById('waterQuickBtn').textContent = `💧 ${state.water}/10`;
+}
+
+function clearDiary() {
+    if (!confirm('Очистить записи за сегодня?')) return;
+    state.diary = { breakfast: [], lunch: [], dinner: [], snack: [] };
+    saveState();
+    renderDiary();
+}
+
+function exportData() {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `nutrisci_redmi_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+}
+
+window.addEventListener('DOMContentLoaded', init);
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+    });
+}
+</script>
+</body>
+</html>
